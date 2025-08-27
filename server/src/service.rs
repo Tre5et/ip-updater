@@ -15,6 +15,7 @@ pub fn restart_redirect(ip: &str) -> Result<(), HttpResponse> {
     }
     let out = comm.output();
     if out.is_err() {
+        println!("Failed to stop redirect");
         return Err(HttpResponse::InternalServerError().body("Failed to stop redirect!"))
     }
     //let unwrap = out.unwrap();
@@ -24,11 +25,13 @@ pub fn restart_redirect(ip: &str) -> Result<(), HttpResponse> {
     let file = get_file().clone();
     let path = Path::new(file.as_str());
     if !path.is_file() {
+        println!("File not found");
         return Err(HttpResponse::InternalServerError().body("File not found!"));
     }
 
     let file_contents = fs::read_to_string(path);
     if file_contents.is_err() {
+        println!("Unable to read file");
         return Err(HttpResponse::InternalServerError().body("Unable to read file!"));
     }
     let file_content = file_contents.unwrap();
@@ -38,6 +41,7 @@ pub fn restart_redirect(ip: &str) -> Result<(), HttpResponse> {
 
     let write = fs::write(path, res.as_str());
     if write.is_err() {
+        println!("Unable to write file");
         return Err(HttpResponse::InternalServerError().body("Unable to write file!"));
     }
 
@@ -50,6 +54,7 @@ pub fn restart_redirect(ip: &str) -> Result<(), HttpResponse> {
     }
     let out = comm.spawn();
     if out.is_err() {
+        println!("Failed to start redirect");
         return Err(HttpResponse::InternalServerError().body("Failed to start redirect!"));
     }
     //let unwrap = out.unwrap();

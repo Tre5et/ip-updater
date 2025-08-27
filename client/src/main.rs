@@ -61,8 +61,11 @@ async fn req_loop() {
                     println!("Requesting new ip {}", ip);
 
                     let new_req = client.post(UPDATE_URL.get().expect("No update url set"))
+                        .header("Content-Length", "0")
+                        .header("User-Agent", "ip-updater")
                         .header("auth", PASSWORD.get().expect("No password set"))
                         .header("new-target-ip", ip.clone())
+                        .body("")
                         .send().await;
 
                     if new_req.is_ok() {

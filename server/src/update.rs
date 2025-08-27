@@ -4,30 +4,32 @@ use crate::service::restart_redirect;
 
 #[post("/")]
 pub async fn main(req: HttpRequest) -> HttpResponse {
+    println!("New request");
+
     let auth_header = req.headers().get("auth");
     if !auth_header.is_some() {
-        println!("Blocked request");
+        println!("Blocked request 1");
         return HttpResponse::Forbidden().finish();
     }
     let auth_unwrap = auth_header.unwrap().to_str();
     if !auth_unwrap.is_ok() {
-        println!("Blocked request");
+        println!("Blocked request 2");
         return HttpResponse::Forbidden().finish();
     }
     let auth = auth_unwrap.unwrap();
     if !auth.eq(get_password().as_str()) {
-        println!("Blocked request");
+        println!("Blocked request 3");
         return HttpResponse::Forbidden().finish();
     }
 
     let ip_header = req.headers().get("new-target-ip");
     if !ip_header.is_some() {
-        println!("Bad request");
+        println!("Bad request 1");
         return HttpResponse::BadRequest().body("No 'new-target-ip' header.");
     }
     let ip_unwrap = ip_header.unwrap().to_str();
     if !ip_unwrap.is_ok() {
-        println!("Bad request");
+        println!("Bad request 2");
         return HttpResponse::BadRequest().body("Invalid 'new-target-ip' header.");
     }
     let ip = ip_unwrap.unwrap();
