@@ -16,4 +16,4 @@ do
         envsubst '$host,$name,$port' < template.conf > /etc/nginx/stream.d/$name.conf
 done
 
-service nginx restart
+service nginx reload
