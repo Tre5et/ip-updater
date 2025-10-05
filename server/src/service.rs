@@ -1,65 +1,40 @@
-use std::fs;
 use std::str;
-use std::path::Path;
-use std::process::Command;
+use std::process::{Command};
 use actix_web::HttpResponse;
-use crate::{get_file, get_regex, get_start_cmd, get_stop_cmd};
+use crate::{get_ports};
 
 pub fn restart_redirect(ip: &str) -> Result<(), HttpResponse> {
-    let cmd = get_stop_cmd().clone();
-    let args: Vec<&str> = cmd.split(" ").collect();
-    //println!("{:?}", args);
-    let mut comm = &mut Command::new(args.get(0).unwrap());
-    for i in 1..args.len() {
-        comm = comm.arg(args.get(i).unwrap());
+    let mut comm = &mut Command::new("./configure-proxy".to_string());
+    comm = comm.arg(ip.to_string());
+    for p in get_ports().split(",") {
+        comm = comm.arg(p.to_string());
     }
     let out = comm.output();
     if out.is_err() {
         println!("Failed to stop redirect");
         return Err(HttpResponse::InternalServerError().body("Failed to stop redirect!"))
     }
-    //let unwrap = out.unwrap();
-    //println!("{}", str::from_utf8(unwrap.stdout.as_ref()).unwrap_or(""));
-    //println!("{}", str::from_utf8(unwrap.stderr.as_ref()).unwrap_or(""));
 
-    let file = get_file().clone();
-    let path = Path::new(file.as_str());
-    if !path.is_file() {
-        println!("File not found");
-        return Err(HttpResponse::InternalServerError().body("File not found!"));
-    }
-
-    let file_contents = fs::read_to_string(path);
-    if file_contents.is_err() {
-        println!("Unable to read file");
-        return Err(HttpResponse::InternalServerError().body("Unable to read file!"));
-    }
-    let file_content = file_contents.unwrap();
-
-    let regex = get_regex();
-    let res = regex.replace(file_content.as_str(), ip).to_string();
-
-    let write = fs::write(path, res.as_str());
-    if write.is_err() {
-        println!("Unable to write file");
-        return Err(HttpResponse::InternalServerError().body("Unable to write file!"));
-    }
-
-    let cmd = get_start_cmd().clone();
-    let args: Vec<&str> = cmd.split(" ").collect();
-    //println!("{:?}", args);
-    let mut comm = &mut Command::new(args.get(0).unwrap());
-    for i in 1..args.len() {
-        comm = comm.arg(args.get(i).unwrap());
-    }
     let out = comm.spawn();
     if out.is_err() {
-        println!("Failed to start redirect");
-        return Err(HttpResponse::InternalServerError().body("Failed to start redirect!"));
+        println!("Failed to start proxy restart");
+        return Err(HttpResponse::InternalServerError().body("Failed to start proxy restart!"));
     }
-    //let unwrap = out.unwrap();
-    //println!("{}", str::from_utf8(unwrap.stdout.as_ref()).unwrap_or(""));
-    //println!("{}", str::from_utf8(unwrap.stderr.as_ref()).unwrap_or(""));
+    let wait = out.unwrap().try_wait();
+    if wait.is_err() {
+        println!("Failed to wait for proxy restart");
+        return Err(HttpResponse::InternalServerError().body("Failed to wait for proxy restart!"))
+    }
+    let wait = wait.unwrap();
+    if wait.is_none() {
+        println!("Failed to get proxy restart exit status");
+        return Err(HttpResponse::InternalServerError().body("Failed to get proxy restart exit status"));
+    }
+    let wait = wait.unwrap();
+    if !wait.success() {
+        println!("Proxy restart exited with failure code");
+        return Err(HttpResponse::InternalServerError().body("Proxy restart exited with failure code"));
+    }
 
     return Ok(());
 }
