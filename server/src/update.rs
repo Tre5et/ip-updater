@@ -33,6 +33,10 @@ pub async fn main(req: HttpRequest) -> HttpResponse {
         return HttpResponse::BadRequest().body("Invalid 'new-target-ip' header.");
     }
     let ip = ip_unwrap.unwrap();
+    if ip.chars().filter(|c| *c == ':').count() < 2 || !ip.chars().all(|c| c.is_ascii_hexdigit() || c == ':') {
+        println!("Bad request 3");
+        return HttpResponse::BadRequest().body("Invalid IPv6 address");
+    }
     
     println!("Received request to update to {}.", ip);
 
